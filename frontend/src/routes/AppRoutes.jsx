@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import Layout from "../components/layout/Layout";
+
 import Login from "../pages/Login/Login";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Fleet from "../pages/Fleet/Fleet";
@@ -15,14 +17,78 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/fleet" element={<Fleet />} />
-        <Route path="/drivers" element={<Drivers />} />
-        <Route path="/trips" element={<Trips />} />
-        <Route path="/maintenance" element={<Maintenance />} />
-        <Route path="/fuel-expenses" element={<FuelExpenses />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/settings" element={<Settings />} />
+
+        <Route
+          path="/dashboard"
+          element={
+            <Layout>
+              <Dashboard />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/fleet"
+          element={
+            <Layout>
+              <Fleet />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/drivers"
+          element={
+            <Layout>
+              <Drivers />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/trips"
+          element={
+            <Layout>
+              <Trips />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/maintenance"
+          element={
+            <Layout>
+              <Maintenance />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/fuel-expenses"
+          element={
+            <Layout>
+              <FuelExpenses />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <Layout>
+              <Reports />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <Layout>
+              <Settings />
+            </Layout>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
