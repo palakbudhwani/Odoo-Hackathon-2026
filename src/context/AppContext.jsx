@@ -1,5 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { mockDb, isLicenseExpired, isLicenseExpiringSoon } from '../data/mockDb';
+import { isLicenseExpired, isLicenseExpiringSoon } from '../data/mockDb';
+import {
+  fetchCollections,
+  loginUser,
+  createItem,
+  updateItem,
+  deleteItem,
+  resetDatabase as resetApiDatabase
+} from '../data/api';
 
 const AppContext = createContext();
 
@@ -30,71 +38,71 @@ export function AppProvider({ children }) {
 
   // Reload all states from database
   const refreshState = () => {
-    const v = mockDb.getVehicles();
-    const d = mockDb.getDrivers();
-    const t = mockDb.getTrips();
-    const m = mockDb.getMaintenanceLogs();
-    const f = mockDb.getFuelLogs();
-    const e = mockDb.getExpenses();
-    const s = mockDb.getSettings();
+    try {
+      const state = fetchCollections();
+      const v = state.vehicles || [];
+      const d = state.drivers || [];
+      const t = state.trips || [];
+      const m = state.maintenance || [];
+      const f = state.fuelLogs || [];
+      const e = state.expenses || [];
+      const s = state.settings || {};
 
-    setVehicles(v);
-    setDrivers(d);
-    setTrips(t);
-    setMaintenance(m);
-    setFuelLogs(f);
-    setExpenses(e);
-    setSettings(s);
+      setVehicles(v);
+      setDrivers(d);
+      setTrips(t);
+      setMaintenance(m);
+      setFuelLogs(f);
+      setExpenses(e);
+      setSettings(s);
 
-    // Calculate dynamic system notifications/alerts
-    const newAlerts = [];
+      const newAlerts = [];
 
-    // 1. License expirations
-    d.forEach(driver => {
-      if (isLicenseExpired(driver.expiryDate)) {
-        newAlerts.push({
-          id: `alert-exp-${driver.id}`,
-          type: 'danger',
-          message: `Driver ${driver.name}'s license (${driver.licenseNum}) expired on ${driver.expiryDate}!`,
-          link: 'drivers'
-        });
-      } else if (isLicenseExpiringSoon(driver.expiryDate, s.licenseWarningDays || 30)) {
-        newAlerts.push({
-          id: `alert-soon-${driver.id}`,
-          type: 'warning',
-          message: `Driver ${driver.name}'s license expires soon on ${driver.expiryDate}.`,
-          link: 'drivers'
-        });
-      }
-    });
-
-    // 2. Vehicles in Shop
-    const inShopCount = v.filter(veh => veh.status === 'In Shop').length;
-    if (inShopCount > 0) {
-      newAlerts.push({
-        id: `alert-shop`,
-        type: 'info',
-        message: `${inShopCount} vehicle(s) currently In Shop for maintenance.`,
-        link: 'maintenance'
+      d.forEach(driver => {
+        if (isLicenseExpired(driver.expiryDate)) {
+          newAlerts.push({
+            id: `alert-exp-${driver.id}`,
+            type: 'danger',
+            message: `Driver ${driver.name}'s license (${driver.licenseNum}) expired on ${driver.expiryDate}!`,
+            link: 'drivers'
+          });
+        } else if (isLicenseExpiringSoon(driver.expiryDate, s.licenseWarningDays || 30)) {
+          newAlerts.push({
+            id: `alert-soon-${driver.id}`,
+            type: 'warning',
+            message: `Driver ${driver.name}'s license expires soon on ${driver.expiryDate}.`,
+            link: 'drivers'
+          });
+        }
       });
-    }
 
-    // 3. Low safety scores
-    d.forEach(driver => {
-      if (driver.safetyScore < 80 && driver.status !== 'Suspended') {
+      const inShopCount = v.filter(veh => veh.status === 'In Shop').length;
+      if (inShopCount > 0) {
         newAlerts.push({
-          id: `alert-safety-${driver.id}`,
-          type: 'warning',
-          message: `Driver ${driver.name} has a low safety score (${driver.safetyScore}%). Consider review.`,
-          link: 'drivers'
+          id: `alert-shop`,
+          type: 'info',
+          message: `${inShopCount} vehicle(s) currently In Shop for maintenance.`,
+          link: 'maintenance'
         });
       }
-    });
 
-    setAlerts(newAlerts);
+      d.forEach(driver => {
+        if (driver.safetyScore < 80 && driver.status !== 'Suspended') {
+          newAlerts.push({
+            id: `alert-safety-${driver.id}`,
+            type: 'warning',
+            message: `Driver ${driver.name} has a low safety score (${driver.safetyScore}%). Consider review.`,
+            link: 'drivers'
+          });
+        }
+      });
+
+      setAlerts(newAlerts);
+    } catch (error) {
+      console.error('Failed to refresh state', error);
+    }
   };
 
-  // On mount, load data
   useEffect(() => {
     refreshState();
   }, []);
@@ -112,7 +120,8 @@ export function AppProvider({ children }) {
   // Auth Operations
   const login = (email, password) => {
     try {
-      const authenticatedUser = mockDb.authenticateUser(email, password);
+      const response = loginUser(email, password);
+      const authenticatedUser = response.user;
       setUser(authenticatedUser);
       localStorage.setItem('transitops_session', JSON.stringify(authenticatedUser));
       setView('dashboard');
@@ -124,9 +133,9 @@ export function AppProvider({ children }) {
 
   const signup = (name, email, password, role) => {
     try {
-      const newUser = mockDb.registerUser({ name, email, password, role });
-      setUser(newUser);
-      localStorage.setItem('transitops_session', JSON.stringify(newUser));
+      const newUser = createItem('users', { name, email, password, role });
+      setUser({ id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role });
+      localStorage.setItem('transitops_session', JSON.stringify({ id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role }));
       setView('dashboard');
       return { success: true };
     } catch (error) {
@@ -142,15 +151,8 @@ export function AppProvider({ children }) {
 
   // Reset Database
   const resetDatabase = () => {
-    mockDb.resetDb();
-    refreshState();
-  };
-
-  // --- Wrapper CRUD Actions ---
-
-  const handleAction = (callback) => {
     try {
-      callback();
+      resetApiDatabase();
       refreshState();
       return { success: true };
     } catch (error) {
@@ -158,35 +160,99 @@ export function AppProvider({ children }) {
     }
   };
 
-  const saveVehicle = (vehicle) => handleAction(() => mockDb.saveVehicle(vehicle));
-  const deleteVehicle = (regNum) => handleAction(() => mockDb.deleteVehicle(regNum));
+  // --- Wrapper CRUD Actions ---
 
-  const saveDriver = (driver) => handleAction(() => mockDb.saveDriver(driver));
-  const deleteDriver = (id) => handleAction(() => mockDb.deleteDriver(id));
+  const handleAction = (collection, id, payload, method = 'create') => {
+    try {
+      if (method === 'delete') {
+        deleteItem(collection, id);
+      } else if (method === 'update') {
+        updateItem(collection, id, payload);
+      } else {
+        createItem(collection, payload);
+      }
+      refreshState();
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  };
 
-  const saveTrip = (trip) => handleAction(() => mockDb.saveTrip(trip));
-  const dispatchTrip = (tripId) => handleAction(() => mockDb.dispatchTrip(tripId));
-  const completeTrip = (tripId, finalOdometer, fuelConsumed) => 
-    handleAction(() => mockDb.completeTrip(tripId, finalOdometer, fuelConsumed));
-  const cancelTrip = (tripId) => handleAction(() => mockDb.cancelTrip(tripId));
+  const saveVehicle = (vehicle) => {
+    const payload = { ...vehicle };
+    const existingVehicle = vehicles.find((item) => item.regNum === payload.regNum);
+    if (existingVehicle?.id) {
+      return handleAction('vehicles', existingVehicle.id, payload, 'update');
+    }
+    return handleAction('vehicles', null, payload, 'create');
+  };
+  const deleteVehicle = (regNum) => {
+    const existingVehicle = vehicles.find((item) => item.regNum === regNum);
+    if (existingVehicle?.id) {
+      return handleAction('vehicles', existingVehicle.id, null, 'delete');
+    }
+    return handleAction('vehicles', regNum, null, 'delete');
+  };
 
-  const saveMaintenanceLog = (log) => handleAction(() => mockDb.saveMaintenanceLog(log));
-  const closeMaintenance = (logId, finalCost) => handleAction(() => mockDb.closeMaintenance(logId, finalCost));
-  const deleteMaintenanceLog = (id) => handleAction(() => mockDb.deleteMaintenanceLog(id));
+  const saveDriver = (driver) => {
+    if (driver.id) {
+      return handleAction('drivers', driver.id, driver, 'update');
+    }
+    return handleAction('drivers', null, driver, 'create');
+  };
+  const deleteDriver = (id) => handleAction('drivers', id, null, 'delete');
 
-  const saveFuelLog = (log) => handleAction(() => mockDb.saveFuelLog(log));
-  const deleteFuelLog = (id) => handleAction(() => mockDb.deleteFuelLog(id));
+  const saveTrip = (trip) => {
+    if (trip.id) {
+      return handleAction('trips', trip.id, trip, 'update');
+    }
+    return handleAction('trips', null, trip, 'create');
+  };
+  const dispatchTrip = (tripId) => handleAction('trips', tripId, { status: 'Dispatched' }, 'update');
+  const completeTrip = (tripId, finalOdometer, fuelConsumed) =>
+    handleAction('trips', tripId, { status: 'Completed', endOdometer: finalOdometer, fuelConsumed }, 'update');
+  const cancelTrip = (tripId) => handleAction('trips', tripId, { status: 'Cancelled' }, 'update');
 
-  const saveExpense = (expense) => handleAction(() => mockDb.saveExpense(expense));
-  const deleteExpense = (id) => handleAction(() => mockDb.deleteExpense(id));
+  const saveMaintenanceLog = (log) => {
+    if (log.id) {
+      return handleAction('maintenance', log.id, log, 'update');
+    }
+    return handleAction('maintenance', null, log, 'create');
+  };
+  const closeMaintenance = (logId, finalCost) => handleAction('maintenance', logId, { status: 'Completed', cost: finalCost }, 'update');
+  const deleteMaintenanceLog = (id) => handleAction('maintenance', id, null, 'delete');
 
-  const saveGlobalSettings = (newSettings) => handleAction(() => mockDb.saveSettings(newSettings));
+  const saveFuelLog = (log) => {
+    if (log.id) {
+      return handleAction('fuelLogs', log.id, log, 'update');
+    }
+    return handleAction('fuelLogs', null, log, 'create');
+  };
+  const deleteFuelLog = (id) => handleAction('fuelLogs', id, null, 'delete');
 
-  // --- Operational aggregates ---
-  const getVehicleCost = (regNum) => mockDb.getVehicleOperationalCost(regNum);
-  const getVehicleRevenue = (regNum) => mockDb.getVehicleRevenue(regNum);
-  const getVehicleDistance = (regNum) => mockDb.getVehicleDistance(regNum);
-  const getVehicleFuelLiters = (regNum) => mockDb.getVehicleFuelLiters(regNum);
+  const saveExpense = (expense) => {
+    if (expense.id) {
+      return handleAction('expenses', expense.id, expense, 'update');
+    }
+    return handleAction('expenses', null, expense, 'create');
+  };
+  const deleteExpense = (id) => handleAction('expenses', id, null, 'delete');
+
+  const saveGlobalSettings = (newSettings) => handleAction('settings', 'settings', newSettings, 'update');
+
+  const getVehicleCost = (regNum) => {
+    const vehicle = vehicles.find((item) => item.regNum === regNum);
+    return vehicle ? vehicle.acquisitionCost || 0 : 0;
+  };
+  const getVehicleRevenue = (regNum) => {
+    return trips.filter((trip) => trip.vehicleReg === regNum && trip.status === 'Completed').reduce((sum, trip) => sum + (trip.revenue || 0), 0);
+  };
+  const getVehicleDistance = (regNum) => {
+    return trips.filter((trip) => trip.vehicleReg === regNum && trip.status === 'Completed').reduce((sum, trip) => sum + (trip.plannedDistance || 0), 0);
+  };
+  const getVehicleFuelLiters = (regNum) => {
+    return fuelLogs.filter((log) => log.vehicleReg === regNum).reduce((sum, log) => sum + (log.liters || 0), 0);
+  };
 
   return (
     <AppContext.Provider value={{
