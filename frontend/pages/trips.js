@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import api from '../lib/api'
 import { useAuth } from '../context/AuthContext'
+import RequireAnyRole from '../components/RequireRole'
 
 export default function Trips() {
   const router = useRouter()
@@ -87,7 +88,8 @@ export default function Trips() {
             <h2 className="text-xl font-semibold text-white">Create trip</h2>
             <p className="text-slate-400 text-sm">Add a trip and assign it to a vehicle and driver.</p>
           </div>
-          <form onSubmit={submit} className="space-y-4">
+          <RequireAnyRole roles={["User", "Fleet Manager", "Safety Officer", "Financial Analyst"]} fallback={<div className="p-6 text-slate-400">You do not have permission to create trips.</div>}>
+            <form onSubmit={submit} className="space-y-4">
             {[
               { label: 'Origin', key: 'source' },
               { label: 'Destination', key: 'destination' },
@@ -106,9 +108,10 @@ export default function Trips() {
                 />
               </div>
             ))}
-            <button className="btn bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500" type="submit">Create trip</button>
-            {status && <div className="text-sm text-slate-300">{status}</div>}
-          </form>
+              <button className="btn bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500" type="submit">Create trip</button>
+              {status && <div className="text-sm text-slate-300">{status}</div>}
+            </form>
+          </RequireAnyRole>
         </div>
       </div>
     </div>

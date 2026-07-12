@@ -93,13 +93,15 @@ enum TripStatus {
 }
 
 model MaintenanceLog {
-  id        Int      @id @default(autoincrement())
-  vehicleId Int
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
-  type      String
-  notes     String?
-  date      DateTime @default(now())
-  createdAt DateTime @default(now())
+  id          Int               @id @default(autoincrement())
+  vehicleId   Int
+  vehicle     Vehicle           @relation(fields: [vehicleId], references: [id])
+  type        String
+  notes       String?
+  date        DateTime          @default(now())
+  status      MaintenanceStatus @default(IN_PROGRESS)
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
 }
 
 model FuelLog {
@@ -119,4 +121,10 @@ model Expense {
   type      String
   notes     String?
   date      DateTime @default(now())
+}
+
+enum MaintenanceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
 }

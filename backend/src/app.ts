@@ -10,6 +10,8 @@ import trips from './routes/trips';
 import maintenance from './routes/maintenance';
 import fuel from './routes/fuel';
 import expenses from './routes/expenses';
+import dashboard from './routes/dashboard';
+import reports from './routes/reports';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -31,6 +33,8 @@ app.use('/trips', trips);
 app.use('/maintenance', maintenance);
 app.use('/fuel', fuel);
 app.use('/expenses', expenses);
+app.use('/dashboard', dashboard);
+app.use('/reports', reports);
 
 app.use(errorHandler);
 

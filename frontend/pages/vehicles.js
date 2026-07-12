@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import api from '../lib/api'
 import { useAuth } from '../context/AuthContext'
+import RequireAnyRole from '../components/RequireRole'
 
 export default function Vehicles() {
   const router = useRouter()
   const { user } = useAuth()
   const [items, setItems] = useState([])
   const [form, setForm] = useState({ registrationNumber: '', name: '', model: '', type: '', maxLoadKg: '', odometerKm: '' })
+  const [errors, setErrors] = useState({})
   const [status, setStatus] = useState('')
 
   useEffect(() => {
@@ -27,17 +29,32 @@ export default function Vehicles() {
     load()
   }, [user, router])
 
+  function validate() {
+    const validation = {}
+    if (!form.registrationNumber.trim()) validation.registrationNumber = 'Registration number is required.'
+    if (form.maxLoadKg && Number(form.maxLoadKg) <= 0) validation.maxLoadKg = 'Maximum load must be a positive number.'
+    if (form.odometerKm && Number(form.odometerKm) < 0) validation.odometerKm = 'Odometer must be zero or higher.'
+    return validation
+  }
+
   async function submit(e) {
     e.preventDefault()
     setStatus('')
+    const validation = validate()
+    if (Object.keys(validation).length) {
+      setErrors(validation)
+      setStatus('Please fix the highlighted fields before submitting.')
+      return
+    }
+    setErrors({})
     try {
       await api.post('/vehicles', {
         registrationNumber: form.registrationNumber,
         name: form.name,
         model: form.model,
         type: form.type,
-        maxLoadKg: Number(form.maxLoadKg),
-        odometerKm: Number(form.odometerKm),
+        maxLoadKg: form.maxLoadKg ? Number(form.maxLoadKg) : undefined,
+        odometerKm: form.odometerKm ? Number(form.odometerKm) : undefined,
       })
       setStatus('Vehicle created successfully')
       setForm({ registrationNumber: '', name: '', model: '', type: '', maxLoadKg: '', odometerKm: '' })
@@ -87,7 +104,8 @@ export default function Vehicles() {
             <h2 className="text-xl font-semibold text-white">Add vehicle</h2>
             <p className="text-slate-400 text-sm">Register a vehicle with capacity and status data.</p>
           </div>
-          <form onSubmit={submit} className="space-y-4">
+          <RequireAnyRole roles={["User", "Fleet Manager", "Safety Officer", "Financial Analyst"]} fallback={<div className="p-6 text-slate-400">You do not have permission to add vehicles.</div>}>
+            <form onSubmit={submit} className="space-y-4">
             {[
               { label: 'Registration Number', key: 'registrationNumber' },
               { label: 'Name', key: 'name' },
@@ -106,9 +124,10 @@ export default function Vehicles() {
                 />
               </div>
             ))}
-            <button className="btn bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500" type="submit">Create vehicle</button>
-            {status && <div className="text-sm text-slate-300">{status}</div>}
-          </form>
+              <button className="btn bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500" type="submit">Create vehicle</button>
+              {status && <div className="text-sm text-slate-300">{status}</div>}
+            </form>
+          </RequireAnyRole>
         </div>
       </div>
     </div>

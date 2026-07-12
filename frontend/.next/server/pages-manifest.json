@@ -2,8 +2,13 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/": "pages/index.js",
+  "/login": "pages/login.js",
+  "/dashboard": "pages/dashboard.js",
+  "/vehicles": "pages/vehicles.js",
+  "/maintenance": "pages/maintenance.js",
   "/drivers": "pages/drivers.js",
-  "/expenses": "pages/expenses.js",
+  "/trips": "pages/trips.js",
   "/fuel": "pages/fuel.js",
-  "/dashboard": "pages/dashboard.js"
+  "/expenses": "pages/expenses.js"
 }

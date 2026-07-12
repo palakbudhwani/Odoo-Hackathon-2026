@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import prisma from '../prisma';
 
 const router = Router();
@@ -19,12 +20,25 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const RoleInput = z.object({
+  name: z.string().min(1, 'Role name is required'),
+});
+
 router.post('/', async (req, res, next) => {
   try {
-    const { name } = req.body;
+    const { name } = RoleInput.parse(req.body);
     const role = await prisma.role.create({ data: { name } });
     res.status(201).json(role);
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: err.errors.map(e => e.message).join(', ') });
+    }
+    const prismaErr = err as { code?: string };
+    if (prismaErr.code === 'P2002') {
+      return res.status(409).json({ error: 'Role already exists' });
+    }
+    next(err);
+  }
 });
 
 router.put('/:id', async (req, res, next) => {
