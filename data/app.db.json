@@ -1,0 +1,62 @@
+{
+  "users": [
+    {
+      "id": "user-admin",
+      "name": "Fleet Manager",
+      "email": "admin@transitops.com",
+      "password": "password123",
+      "role": "Fleet Manager"
+    },
+    {
+      "id": "user-dispatcher",
+      "name": "Dispatcher",
+      "email": "dispatcher@transitops.com",
+      "password": "password123",
+      "role": "Dispatcher"
+    },
+    {
+      "id": "user-safety",
+      "name": "Safety Officer",
+      "email": "safety@transitops.com",
+      "password": "password123",
+      "role": "Safety Officer"
+    },
+    {
+      "id": "user-finance",
+      "name": "Financial Analyst",
+      "email": "finance@transitops.com",
+      "password": "password123",
+      "role": "Financial Analyst"
+    },
+    {
+      "id": "users-1783850432651-862",
+      "name": "palak",
+      "email": "palbudhwani01@gmail.com",
+      "password": "Hello01",
+      "role": "Safety Officer"
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "vehicles-1783850530314-954",
+      "regNum": "TRK-999",
+      "name": "mercedes",
+      "type": "Semi-Truck",
+      "maxCapacity": 3998,
+      "odometer": 12000,
+      "acquisitionCost": 44998,
+      "status": "In Shop",
+      "region": "North"
+    }
+  ],
+  "drivers": [],
+  "trips": [],
+  "maintenance": [],
+  "fuelLogs": [],
+  "expenses": [],
+  "settings": {
+    "currency": "USD",
+    "revenuePerKm": 3,
+    "licenseWarningDays": 30
+  }
+}
