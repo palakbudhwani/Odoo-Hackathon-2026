@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Use env var DATABASE_URL. Supports Postgres or MySQL depending on provider string.
+datasource db {
+  // Prisma does not allow env() in the provider field. Set to 'postgresql' or 'mysql'.
+  // Using MySQL as the datasource provider. If you prefer Postgres, set this to "postgresql" and update DATABASE_URL.
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  roleId       Int
+  role         Role     @relation(fields: [roleId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Vehicle {
+  id                 Int      @id @default(autoincrement())
+  registrationNumber String   @unique
+  name               String?
+  model              String?
+  type               String?
+  maxLoadKg          Int?
+  odometerKm         Int?     @default(0)
+  acquisitionCost    Float?
+  status             VehicleStatus @default(AVAILABLE)
+  createdAt          DateTime @default(now())
+  maintenanceLogs    MaintenanceLog[]
+  trips              Trip[]
+  fuelLogs           FuelLog[]
+  expenses           Expense[]
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  ON_TRIP
+  IN_SHOP
+  RETIRED
+}
+
+model Driver {
+  id             Int      @id @default(autoincrement())
+  name           String
+  licenseNumber  String   @unique
+  licenseCategory String?
+  licenseExpiry  DateTime?
+  contactNumber  String?
+  status         DriverStatus @default(AVAILABLE)
+  createdAt      DateTime @default(now())
+  trips          Trip[]
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  SUSPENDED
+}
+
+model Trip {
+  id            Int      @id @default(autoincrement())
+  source        String
+  destination   String
+  vehicleId     Int
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+  driverId      Int
+  driver        Driver   @relation(fields: [driverId], references: [id])
+  cargoWeightKg Int?
+  plannedDistanceKm Int?
+  status        TripStatus @default(DRAFT)
+  createdAt     DateTime @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+}
+
+enum TripStatus {
+  DRAFT
+  DISPATCHED
+  COMPLETED
+  CANCELLED
+}
+
+model MaintenanceLog {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  type      String
+  notes     String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model FuelLog {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  liters    Float
+  cost      Float
+  date      DateTime @default(now())
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  amount    Float
+  type      String
+  notes     String?
+  date      DateTime @default(now())
+}
