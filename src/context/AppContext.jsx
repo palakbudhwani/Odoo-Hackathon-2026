@@ -18,7 +18,9 @@ export function AppProvider({ children }) {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [view, setView] = useState('dashboard');
+  const [view, setViewState] = useState('dashboard');
+  const [viewHistory, setViewHistory] = useState(['dashboard']);
+  const [viewIndex, setViewIndex] = useState(0);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('transitops_dark_mode') === 'true';
   });
@@ -116,6 +118,28 @@ export function AppProvider({ children }) {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  const setView = (nextView) => {
+    if (!nextView || nextView === view) return;
+    const newHistory = [...viewHistory.slice(0, viewIndex + 1), nextView];
+    setViewHistory(newHistory);
+    setViewIndex(newHistory.length - 1);
+    setViewState(nextView);
+  };
+
+  const goBack = () => {
+    if (viewIndex === 0) return;
+    const nextIndex = viewIndex - 1;
+    setViewIndex(nextIndex);
+    setViewState(viewHistory[nextIndex]);
+  };
+
+  const goForward = () => {
+    if (viewIndex >= viewHistory.length - 1) return;
+    const nextIndex = viewIndex + 1;
+    setViewIndex(nextIndex);
+    setViewState(viewHistory[nextIndex]);
+  };
 
   // Auth Operations
   const login = (email, password) => {
@@ -262,6 +286,8 @@ export function AppProvider({ children }) {
       logout,
       view,
       setView,
+      goBack,
+      goForward,
       darkMode,
       setDarkMode,
       vehicles,

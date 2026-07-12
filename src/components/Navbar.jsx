@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export default function Navbar({ toggleSidebar }) {
-  const { user, view, darkMode, setDarkMode, alerts, setView, searchQuery, setSearchQuery } = useApp();
+  const { user, view, darkMode, setDarkMode, alerts, setView, searchQuery, setSearchQuery, goBack, goForward } = useApp();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   if (!user) return null;
@@ -25,11 +25,23 @@ export default function Navbar({ toggleSidebar }) {
     <header style={styles.header}>
       {/* Left items - hamburger & Title */}
       <div style={styles.left}>
-        <button style={styles.toggleBtn} onClick={toggleSidebar}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <div style={styles.navGroup}>
+          <button style={styles.toggleBtn} onClick={toggleSidebar} title="Open menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <button style={styles.iconBtn} onClick={goBack} title="Go back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button style={styles.iconBtn} onClick={goForward} title="Go forward">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
         <h1 style={styles.title}>{currentTitle}</h1>
       </div>
 
@@ -154,20 +166,41 @@ const styles = {
     alignItems: 'center',
     gap: '12px'
   },
+  navGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
   toggleBtn: {
     background: 'transparent',
     border: 'none',
     color: 'var(--text-primary)',
     cursor: 'pointer',
-    display: 'none',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '4px',
-    borderRadius: '4px',
+    padding: '8px',
+    borderRadius: '8px',
     ':hover': {
       backgroundColor: 'var(--bg-secondary)'
-    },
-    // Media queries managed outside React inline styles, handled in layout
+    }
+  },
+  iconBtn: {
+    background: 'transparent',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '34px',
+    height: '34px',
+    borderRadius: '8px',
+    transition: 'all var(--transition-fast)',
+    ':hover': {
+      backgroundColor: 'var(--bg-secondary)',
+      color: 'var(--text-primary)'
+    }
   },
   title: {
     fontSize: '20px',
